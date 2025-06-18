@@ -1,0 +1,37 @@
+# Learn more about configuring your extension at https://shopify.dev/docs/apps/app-extensions/configuration
+
+api_version = "2023-10"
+
+[[extensions]]
+name = "delivery-estimator"
+type = "theme_app_extension"
+
+[extensions.settings]
+[[extensions.settings.blocks]]
+type = "delivery_estimate"
+name = "Delivery Estimate"
+settings = [
+  {
+    type = "text",
+    id = "heading",
+    label = "Heading",
+    default = "Estimated Delivery"
+  },
+  {
+    type = "select",
+    id = "shipping_method",
+    label = "Default Shipping Method",
+    options = [
+      { value = "standard", label = "Standard" },
+      { value = "express", label = "Express" },
+      { value = "international", label = "International" }
+    ],
+    default = "standard"
+  },
+  {
+    type = "checkbox",
+    id = "show_icon",
+    label = "Show delivery icon",
+    default = true
+  }
+]

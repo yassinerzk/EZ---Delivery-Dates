@@ -1,0 +1,158 @@
+{% comment %}
+  EstimaTrack Delivery Rules - Product Page Delivery Estimate Block
+  This block displays estimated delivery information on product pages
+{% endcomment %}
+
+<div class="estimatrack-delivery-estimate" data-product-id="{{ product.id }}">
+  {% if block.settings.heading != blank %}
+    <h3 class="delivery-estimate-heading">
+      {% if block.settings.show_icon %}
+        <svg class="delivery-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 6H21L19 16H5L3 6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 6L2 2H1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="20" r="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="20" r="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      {% endif %}
+      {{ block.settings.heading }}
+    </h3>
+  {% endif %}
+  
+  <div class="delivery-estimate-content">
+    <div class="delivery-estimate-loading" style="display: none;">
+      <span>Calculating delivery estimate...</span>
+    </div>
+    
+    <div class="delivery-estimate-result">
+      <p class="delivery-message" id="delivery-message-{{ product.id }}">
+        Loading delivery estimate...
+      </p>
+      <div class="delivery-dates" id="delivery-dates-{{ product.id }}" style="display: none;">
+        <span class="delivery-date-range"></span>
+      </div>
+    </div>
+    
+    <div class="delivery-estimate-error" style="display: none;">
+      <p>Unable to calculate delivery estimate at this time.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .estimatrack-delivery-estimate {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  .delivery-estimate-heading {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .delivery-icon {
+    color: #2563eb;
+  }
+  
+  .delivery-estimate-content {
+    font-size: 0.9rem;
+  }
+  
+  .delivery-message {
+    margin: 0;
+    color: #374151;
+    font-weight: 500;
+  }
+  
+  .delivery-dates {
+    margin-top: 0.5rem;
+    color: #6b7280;
+  }
+  
+  .delivery-date-range {
+    font-size: 0.85rem;
+  }
+  
+  .delivery-estimate-loading {
+    color: #6b7280;
+    font-style: italic;
+  }
+  
+  .delivery-estimate-error {
+    color: #dc2626;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const productId = {{ product.id }};
+    const shippingMethod = '{{ block.settings.shipping_method }}';
+    const messageElement = document.getElementById('delivery-message-' + productId);
+    const datesElement = document.getElementById('delivery-dates-' + productId);
+    
+    // Get user's country (simplified - you might want to use a more sophisticated method)
+    const userCountry = 'US'; // Default to US, could be detected via IP or user input
+    
+    // Fetch delivery estimate from the app
+    fetch(`/apps/estimatrack-delivery-rules/api/delivery-estimate?productId=${productId}&country=${userCountry}&shippingMethod=${shippingMethod}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.estimatedDelivery) {
+          messageElement.textContent = data.estimatedDelivery.message;
+          
+          // Format and display delivery date range
+          const minDate = new Date(data.estimatedDelivery.minDate);
+          const maxDate = new Date(data.estimatedDelivery.maxDate);
+          const dateRange = `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}`;
+          
+          datesElement.querySelector('.delivery-date-range').textContent = dateRange;
+          datesElement.style.display = 'block';
+        } else {
+          messageElement.textContent = 'Delivery estimate unavailable';
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching delivery estimate:', error);
+        messageElement.textContent = 'Unable to load delivery estimate';
+      });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Delivery Estimate",
+  "target": "section",
+  "available_if": "{{ product != blank }}",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Estimated Delivery"
+    },
+    {
+      "type": "select",
+      "id": "shipping_method",
+      "label": "Default Shipping Method",
+      "options": [
+        { "value": "standard", "label": "Standard" },
+        { "value": "express", "label": "Express" },
+        { "value": "international", "label": "International" }
+      ],
+      "default": "standard"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icon",
+      "label": "Show delivery icon",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
