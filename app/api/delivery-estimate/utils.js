@@ -7,30 +7,35 @@ export const DEFAULT_RULE_NAME = 'Standard Shipping';
 
 /**
  * Validates the incoming request parameters
- * @param {Request} request - The incoming request
- * @param {Object} session - The authenticated session
- * @returns {Object} Validated parameters or error
+ * @param {string} productId - The product ID
+ * @param {string} country - The country code
+ * @returns {string|null} - Error message if validation fails, null if valid
  */
-export function validateRequest(request, session) {
-  const url = new URL(request.url);
-  const productId = url.searchParams.get('productId');
-  const tags = url.searchParams.get('tags');
-  const country = url.searchParams.get('country') || DEFAULT_COUNTRY;
-  const variantId = url.searchParams.get('variantId');
-  const shop = url.searchParams.get('shop') || session?.shop;
-  
-  if (!productId) {
-    return { error: 'Product ID is required' };
+export function validateRequest(productId, country) {
+  if (!productId || typeof productId !== 'string' || productId.trim() === '') {
+    return 'Product ID is required and must be a non-empty string';
   }
   
-  return {
-    productId,
-    tags,
-    country,
-    variantId,
-    shop,
-    error: null
-  };
+  if (!country || typeof country !== 'string' || country.trim() === '') {
+    return 'Country is required and must be a non-empty string';
+  }
+  
+  // Basic country code validation (2-3 characters)
+  if (country.length < 2 || country.length > 3) {
+    return 'Country must be a valid 2-3 character country code';
+  }
+  
+  // Validate product ID format (basic Shopify product ID validation)
+  if (!/^\d+$/.test(productId)) {
+    return 'Product ID must contain only numbers';
+  }
+  
+  // Validate country code format (letters only)
+  if (!/^[A-Za-z]+$/.test(country)) {
+    return 'Country code must contain only letters';
+  }
+  
+  return null; // Valid
 }
 
 /**
@@ -47,17 +52,109 @@ export function formatDeliveryEstimate(minDays, maxDays) {
 }
 
 /**
- * Creates CORS headers for theme extension requests
- * @returns {Object} CORS headers object
+ * Creates CORS headers for the response
+ * @returns {Object} - CORS headers
  */
 export function createCorsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400', // 24 hours
+    'Content-Type': 'application/json',
   };
 }
+
+/**
+ * Rate limiter implementation
+ * Simple in-memory rate limiting (consider Redis for production)
+ */
+class RateLimiter {
+  constructor() {
+    this.requests = new Map();
+    this.windowMs = 60 * 1000; // 1 minute
+    this.maxRequests = 100; // 100 requests per minute per IP
+    
+    // Clean up old entries every 5 minutes
+    setInterval(() => this.cleanup(), 5 * 60 * 1000);
+  }
+  
+  async check(request) {
+    const ip = this.getClientIP(request);
+    const now = Date.now();
+    const windowStart = now - this.windowMs;
+    
+    if (!this.requests.has(ip)) {
+      this.requests.set(ip, []);
+    }
+    
+    const ipRequests = this.requests.get(ip);
+    
+    // Remove old requests outside the window
+    const validRequests = ipRequests.filter(timestamp => timestamp > windowStart);
+    
+    if (validRequests.length >= this.maxRequests) {
+      const oldestRequest = Math.min(...validRequests);
+      const retryAfter = Math.ceil((oldestRequest + this.windowMs - now) / 1000);
+      
+      return {
+        allowed: false,
+        ip,
+        retryAfter,
+        remaining: 0
+      };
+    }
+    
+    // Add current request
+    validRequests.push(now);
+    this.requests.set(ip, validRequests);
+    
+    return {
+      allowed: true,
+      ip,
+      remaining: this.maxRequests - validRequests.length,
+      resetTime: windowStart + this.windowMs
+    };
+  }
+  
+  getClientIP(request) {
+    // Try to get real IP from various headers
+    const forwarded = request.headers.get('x-forwarded-for');
+    if (forwarded) {
+      return forwarded.split(',')[0].trim();
+    }
+    
+    return request.headers.get('x-real-ip') || 
+           request.headers.get('cf-connecting-ip') || 
+           'unknown';
+  }
+  
+  cleanup() {
+    const now = Date.now();
+    const windowStart = now - this.windowMs;
+    
+    for (const [ip, requests] of this.requests.entries()) {
+      const validRequests = requests.filter(timestamp => timestamp > windowStart);
+      
+      if (validRequests.length === 0) {
+        this.requests.delete(ip);
+      } else {
+        this.requests.set(ip, validRequests);
+      }
+    }
+  }
+  
+  getStats() {
+    return {
+      totalIPs: this.requests.size,
+      windowMs: this.windowMs,
+      maxRequests: this.maxRequests,
+      activeRequests: Array.from(this.requests.values()).reduce((sum, reqs) => sum + reqs.length, 0)
+    };
+  }
+}
+
+export const rateLimiter = new RateLimiter();
 
 /**
  * Creates a standardized delivery estimate response
