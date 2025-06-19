@@ -29,7 +29,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLoaderData, useFetcher } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { saveDeliveryRule } from "../lib/supabase.server";
+import { saveDeliveryRule } from "../lib/supabase.server.ts";
 
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);

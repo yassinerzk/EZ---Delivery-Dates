@@ -1,6 +1,6 @@
 import { data } from "@remix-run/node";
 import { authenticate } from "../../shopify.server";
-import { getMatchingDeliveryRules, getDefaultDeliveryRule } from "../../lib/supabase.server";
+import { getMatchingDeliveryRules, getDefaultDeliveryRule } from "../../lib/supabase.server.ts";
 import { validateRequest, formatDeliveryEstimate, createCorsHeaders } from "./utils.js";
 
 /**

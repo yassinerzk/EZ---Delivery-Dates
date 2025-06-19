@@ -226,8 +226,15 @@
 
 <script>
   (function() {
+    console.log('🚀 EstimaTrack Extension: Starting initialization');
+    
     const deliveryBlock = document.querySelector('.delivery-estimate-block');
-    if (!deliveryBlock) return;
+    if (!deliveryBlock) {
+      console.error('❌ EstimaTrack Extension: Delivery block not found');
+      return;
+    }
+    
+    console.log('✅ EstimaTrack Extension: Delivery block found', deliveryBlock);
     
     const productId = deliveryBlock.dataset.productId;
     const productTags = deliveryBlock.dataset.productTags;
@@ -235,6 +242,15 @@
     const productVendor = deliveryBlock.dataset.productVendor;
     const shopDomain = deliveryBlock.dataset.shopDomain;
     const variantId = deliveryBlock.dataset.variantId;
+    
+    console.log('📦 EstimaTrack Extension: Extracted product data:', {
+      productId,
+      productTags,
+      productType,
+      productVendor,
+      shopDomain,
+      variantId
+    });
     const countrySelect = deliveryBlock.querySelector('.country-dropdown');
     const deliveryText = deliveryBlock.querySelector('.delivery-estimate-text');
     const customMessage = deliveryBlock.querySelector('.custom-message');
@@ -244,46 +260,79 @@
     const resultDiv = deliveryBlock.querySelector('.delivery-result');
     const errorDiv = deliveryBlock.querySelector('.delivery-error');
     
+    console.log('🎯 EstimaTrack Extension: DOM elements found:', {
+      countrySelect: !!countrySelect,
+      deliveryText: !!deliveryText,
+      customMessage: !!customMessage,
+      deliveryDate: !!deliveryDate,
+      deliveryDateText: !!deliveryDateText,
+      loadingDiv: !!loadingDiv,
+      resultDiv: !!resultDiv,
+      errorDiv: !!errorDiv
+    });
+    
     // Global retry function
     window.deliveryEstimate = {
       retry: function() {
         const selectedCountry = countrySelect ? countrySelect.value : 'US';
+        console.log('🔄 EstimaTrack Extension: Retry triggered with country:', selectedCountry);
         fetchDeliveryEstimate(selectedCountry);
       }
     };
     
+    console.log('🌐 EstimaTrack Extension: Global retry function registered');
+    
     function calculateDeliveryDate(estimateDays) {
-      const today = new Date();
-      const deliveryDate = new Date(today);
+      console.log('📅 EstimaTrack Extension: Calculating delivery date for:', estimateDays);
       
-      // Parse estimate (e.g., "3-5 business days" or "2 business days")
-      const match = estimateDays.match(/(\d+)(?:-(\d+))?/);
-      if (match) {
-        const minDays = parseInt(match[1]);
-        const maxDays = match[2] ? parseInt(match[2]) : minDays;
-        
-        // Add business days (skip weekends)
-        let businessDaysAdded = 0;
-        while (businessDaysAdded < maxDays) {
-          deliveryDate.setDate(deliveryDate.getDate() + 1);
-          const dayOfWeek = deliveryDate.getDay();
-          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
-            businessDaysAdded++;
-          }
-        }
-        
-        return deliveryDate.toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
+      const today = new Date();
+      const match = estimateDays.match(/(\d+)(?:-(\d+))?\s*(?:business\s*)?days?/i);
+      
+      console.log('🔍 EstimaTrack Extension: Regex match result:', match);
+      
+      if (!match) {
+        console.warn('⚠️ EstimaTrack Extension: No days pattern found in estimate');
+        return null;
       }
-      return null;
+      
+      const minDays = parseInt(match[1]);
+      const maxDays = match[2] ? parseInt(match[2]) : minDays;
+      const avgDays = Math.ceil((minDays + maxDays) / 2);
+      
+      console.log('📊 EstimaTrack Extension: Date calculation details:', {
+        minDays,
+        maxDays,
+        avgDays,
+        today: today.toISOString()
+      });
+      
+      let deliveryDate = new Date(today);
+      let addedDays = 0;
+      
+      while (addedDays < avgDays) {
+        deliveryDate.setDate(deliveryDate.getDate() + 1);
+        // Skip weekends (Saturday = 6, Sunday = 0)
+        if (deliveryDate.getDay() !== 0 && deliveryDate.getDay() !== 6) {
+          addedDays++;
+        }
+      }
+      
+      const formattedDate = deliveryDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      console.log('📅 EstimaTrack Extension: Final calculated date:', formattedDate);
+      
+      return formattedDate;
     }
     
     async function fetchDeliveryEstimate(country = 'US') {
+      console.log('🌍 EstimaTrack Extension: Starting fetchDeliveryEstimate with country:', country);
+      
       try {
+        console.log('🔄 EstimaTrack Extension: Setting loading state');
         loadingDiv.style.display = 'flex';
         resultDiv.style.display = 'none';
         errorDiv.style.display = 'none';
@@ -299,25 +348,66 @@
           vendor: productVendor || ''
         });
         
-        const response = await fetch(`/apps/estimatrack/api/delivery-estimate?${params.toString()}`, {
+        const apiUrl = `/apps/estimatrack/api/delivery-estimate?${params.toString()}`;
+        
+        console.log('📡 EstimaTrack Extension: API request details:', {
+          url: apiUrl,
+          params: Object.fromEntries(params),
+          method: 'GET'
+        });
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          cache: 'no-cache'
+        });
+        
+        console.log('📥 EstimaTrack Extension: Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('❌ EstimaTrack Extension: HTTP error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('📊 EstimaTrack Extension: Parsed response data:', data);
         
-        // Always show the delivery estimate block
+        // Validate API response structure
+        console.log('🔍 EstimaTrack Extension: Validating response structure');
+        if (!data || typeof data.estimate !== 'string') {
+          console.error('❌ EstimaTrack Extension: Invalid response structure:', {
+            hasData: !!data,
+            estimateType: typeof data?.estimate,
+            estimateValue: data?.estimate
+          });
+          throw new Error('Invalid API response: missing estimate field');
+        }
+        
+        console.log('✅ EstimaTrack Extension: Response validation passed');
+        
+        // Update UI with delivery estimate
+        console.log('🎨 EstimaTrack Extension: Updating UI with estimate:', data.estimate);
         loadingDiv.style.display = 'none';
         resultDiv.style.display = 'block';
         
-        deliveryText.textContent = `📦 ${data.estimate}`;
+        if (deliveryText) {
+          deliveryText.textContent = `📦 ${data.estimate}`;
+          console.log('📝 EstimaTrack Extension: Updated delivery text element');
+        }
         
         // Show custom message if available
         if (data.customMessage && customMessage) {
@@ -327,38 +417,110 @@
           customMessage.style.display = 'none';
         }
         
-        // Calculate and show delivery date
-        if (deliveryDate && deliveryDateText) {
-          const calculatedDate = calculateDeliveryDate(data.estimate);
-          if (calculatedDate) {
-            deliveryDateText.textContent = `Expected by: ${calculatedDate}`;
-            deliveryDate.style.display = 'block';
-          }
+        // Calculate and display delivery date if estimate contains days
+        const deliveryDateResult = calculateDeliveryDate(data.estimate);
+        console.log('📅 EstimaTrack Extension: Calculated delivery date:', deliveryDateResult);
+        if (deliveryDateResult && deliveryDate && deliveryDateText) {
+          deliveryDate.style.display = 'block';
+          deliveryDateText.textContent = `Expected by: ${deliveryDateResult}`;
+          console.log('📅 EstimaTrack Extension: Updated delivery date display');
         }
         
       } catch (error) {
-        console.error('Error fetching delivery estimate:', error);
+        console.error('💥 EstimaTrack Extension: Error occurred:', error);
         
-        // Show error state instead of hiding the block
         loadingDiv.style.display = 'none';
         resultDiv.style.display = 'none';
         errorDiv.style.display = 'block';
         
-        // Log detailed error for debugging
-        console.log('Delivery estimate error details:', {
-          productId,
-          productTags,
-          country,
-          shopDomain,
-          error: error.message
-        });
+        // Enhanced error logging with context
+        const errorContext = {
+          error: error.message,
+          variantId: variantId,
+          productType: productType,
+          productVendor: productVendor,
+          apiEndpoint: '/apps/estimatrack/api/delivery-estimate',
+          timestamp: new Date().toISOString(),
+          country: country,
+          retryCount: fetchDeliveryEstimate.retryCount || 0
+        };
+        
+        console.error('📋 EstimaTrack Extension: Error context:', errorContext);
+        
+        // Retry logic with exponential backoff
+        if (!fetchDeliveryEstimate.retryCount) {
+          fetchDeliveryEstimate.retryCount = 0;
+        }
+        
+        if (fetchDeliveryEstimate.retryCount < 2) {
+          fetchDeliveryEstimate.retryCount++;
+          const delay = Math.pow(2, fetchDeliveryEstimate.retryCount) * 1000;
+          console.log(`🔄 EstimaTrack Extension: Retrying in ${delay}ms (attempt ${fetchDeliveryEstimate.retryCount}/2)`);
+          setTimeout(() => {
+            fetchDeliveryEstimate(country);
+          }, delay);
+        } else {
+          console.error('❌ EstimaTrack Extension: Max retries reached, giving up');
+        }
+      }
+    }
+    
+    // Auto-detect country based on user's location
+    function detectCountry() {
+      console.log('🌍 EstimaTrack Extension: Starting country detection');
+      
+      if (navigator.geolocation) {
+        console.log('📍 EstimaTrack Extension: Geolocation API available, requesting position');
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            console.log('📍 EstimaTrack Extension: Geolocation success:', {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            });
+            // This is a simplified country detection
+            // In a real implementation, you'd use a geolocation API
+            const defaultCountry = 'US';
+            console.log('🏳️ EstimaTrack Extension: Using default country (geolocation):', defaultCountry);
+            if (countrySelect) {
+              countrySelect.value = defaultCountry;
+            }
+            fetchDeliveryEstimate(defaultCountry);
+          },
+          function(error) {
+            console.warn('⚠️ EstimaTrack Extension: Geolocation failed:', error.message);
+            // Fallback to default country if geolocation fails
+            const defaultCountry = 'US';
+            console.log('🏳️ EstimaTrack Extension: Using default country (fallback):', defaultCountry);
+            if (countrySelect) {
+              countrySelect.value = defaultCountry;
+            }
+            fetchDeliveryEstimate(defaultCountry);
+          }
+        );
+      } else {
+        console.warn('⚠️ EstimaTrack Extension: Geolocation not supported');
+        // Geolocation not supported, use default
+        const defaultCountry = 'US';
+        console.log('🏳️ EstimaTrack Extension: Using default country (no geolocation):', defaultCountry);
+        if (countrySelect) {
+          countrySelect.value = defaultCountry;
+        }
+        fetchDeliveryEstimate(defaultCountry);
       }
     }
     
     // Detect user's country from browser if possible
     function detectUserCountry() {
+      console.log('🌍 EstimaTrack Extension: Detecting user country from browser');
+      
       if (navigator.language) {
         const locale = navigator.language.toLowerCase();
+        
+        console.log('🗣️ EstimaTrack Extension: Browser language detection:', {
+          language: navigator.language,
+          locale: locale
+        });
+        
         const countryMap = {
           'en-us': 'US',
           'en-ca': 'CA',
@@ -374,26 +536,57 @@
         
         for (const [lang, country] of Object.entries(countryMap)) {
           if (locale.startsWith(lang)) {
+            console.log('🏳️ EstimaTrack Extension: Final detected country:', country);
             return country;
           }
         }
       }
+      
+      console.log('🏳️ EstimaTrack Extension: Using default country fallback: US');
       return 'US'; // Default fallback
     }
     
-    // Initial load with detected country
-    const initialCountry = detectUserCountry();
-    if (countrySelect) {
-      countrySelect.value = initialCountry;
-    }
-    fetchDeliveryEstimate(initialCountry);
+    // Event listeners
+    console.log('🎧 EstimaTrack Extension: Setting up event listeners');
     
-    // Update when country changes
     if (countrySelect) {
       countrySelect.addEventListener('change', function() {
-        fetchDeliveryEstimate(this.value);
+        const selectedCountry = this.value;
+        console.log('🔄 EstimaTrack Extension: Country changed to:', selectedCountry);
+        fetchDeliveryEstimate(selectedCountry);
       });
+      console.log('✅ EstimaTrack Extension: Country select listener added');
+    } else {
+      console.warn('⚠️ EstimaTrack Extension: Country select element not found, skipping listener');
     }
+    
+    // Check network status and retry if needed
+    window.addEventListener('online', function() {
+      console.log('🌐 EstimaTrack Extension: Network came back online');
+      if (errorDiv && errorDiv.style.display === 'block') {
+        const selectedCountry = countrySelect ? countrySelect.value : 'US';
+        console.log('🔄 EstimaTrack Extension: Retrying after network reconnection with country:', selectedCountry);
+        fetchDeliveryEstimate(selectedCountry);
+      }
+    });
+    console.log('✅ EstimaTrack Extension: Network status listener added');
+    
+    // Initial load
+     console.log('🚀 EstimaTrack Extension: Starting initial load process');
+     const initialCountry = detectUserCountry();
+     
+     console.log('🎯 EstimaTrack Extension: Setting initial country:', initialCountry);
+     if (countrySelect) {
+       countrySelect.value = initialCountry;
+       console.log('✅ EstimaTrack Extension: Country select value set to:', initialCountry);
+     } else {
+       console.warn('⚠️ EstimaTrack Extension: Country select not available for initial value');
+     }
+     
+     console.log('🚀 EstimaTrack Extension: Making initial API call');
+      fetchDeliveryEstimate(initialCountry);
+      
+      console.log('✅ EstimaTrack Extension: Initialization complete');
     
     // Retry on network errors after delay
     let retryCount = 0;
@@ -409,13 +602,6 @@
         }, delay);
       }
     }
-    
-    // Listen for network status changes
-    window.addEventListener('online', function() {
-      if (errorDiv.style.display !== 'none') {
-        retryWithBackoff();
-      }
-    });
     
   })();
 </script>
