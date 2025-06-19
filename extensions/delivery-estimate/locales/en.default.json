@@ -1,0 +1,23 @@
+{
+  "delivery_estimate": {
+    "title": "Estimated Delivery",
+    "calculating": "Calculating delivery time...",
+    "loading": "Loading delivery estimate...",
+    "deliver_to": "Deliver to:",
+    "error": "Unable to calculate delivery estimate",
+    "retry": "Please try again later",
+    "countries": {
+      "US": "🇺🇸 United States",
+      "CA": "🇨🇦 Canada",
+      "GB": "🇬🇧 United Kingdom",
+      "AU": "🇦🇺 Australia",
+      "DE": "🇩🇪 Germany",
+      "FR": "🇫🇷 France",
+      "JP": "🇯🇵 Japan",
+      "IT": "🇮🇹 Italy",
+      "ES": "🇪🇸 Spain",
+      "NL": "🇳🇱 Netherlands",
+      "OTHER": "🌍 Other Countries"
+    }
+  }
+}
