@@ -1,0 +1,451 @@
+{% comment %}
+  EstimaTrack Delivery Estimate Block
+  Displays dynamic delivery estimates based on product and customer location
+  Fetches real data from Supabase database with shop validation
+{% endcomment %}
+
+<div class="delivery-estimate-block" 
+     data-product-id="{{ product.id }}" 
+     data-product-tags="{{ product.tags | join: ',' }}"
+     data-product-type="{{ product.type }}"
+     data-product-vendor="{{ product.vendor }}"
+     data-shop-domain="{{ shop.permanent_domain }}"
+     data-variant-id="{{ product.selected_or_first_available_variant.id }}">
+  
+  <div class="delivery-estimate-container">
+    <div class="delivery-estimate-header">
+      <svg class="delivery-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 class="delivery-title">{{ block.settings.title | default: 'Estimated Delivery' }}</h3>
+    </div>
+    
+    <div class="delivery-content">
+      <div class="delivery-loading" style="display: flex;">
+        <div class="loading-spinner"></div>
+        <span>Calculating delivery time...</span>
+      </div>
+      
+      <div class="delivery-result" style="display: none;">
+        <div class="delivery-time">
+          <span class="delivery-estimate-text">Loading delivery estimate...</span>
+          <div class="custom-message" style="display: none;"></div>
+        </div>
+        
+        {% if block.settings.show_location_selector %}
+        <div class="location-selector">
+          <label for="country-select-{{ block.id }}">Deliver to:</label>
+          <select id="country-select-{{ block.id }}" class="country-dropdown">
+            <option value="US">🇺🇸 United States</option>
+            <option value="CA">🇨🇦 Canada</option>
+            <option value="GB">🇬🇧 United Kingdom</option>
+            <option value="AU">🇦🇺 Australia</option>
+            <option value="DE">🇩🇪 Germany</option>
+            <option value="FR">🇫🇷 France</option>
+            <option value="JP">🇯🇵 Japan</option>
+            <option value="IT">🇮🇹 Italy</option>
+            <option value="ES">🇪🇸 Spain</option>
+            <option value="NL">🇳🇱 Netherlands</option>
+            <option value="*">🌍 Other Countries</option>
+          </select>
+        </div>
+        {% endif %}
+        
+        {% if block.settings.show_delivery_date %}
+        <div class="delivery-date" style="display: none;">
+          <small class="delivery-date-text"></small>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="delivery-error" style="display: none;">
+        <span class="error-message">Unable to calculate delivery time. Please try again.</span>
+        <button class="retry-button" onclick="window.deliveryEstimate.retry()">Retry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .delivery-estimate-block {
+    margin: 16px 0;
+    padding: 20px;
+    border: 1px solid #e1e3e5;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .delivery-estimate-block:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .delivery-estimate-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .delivery-icon {
+    color: #2563eb;
+    flex-shrink: 0;
+  }
+  
+  .delivery-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.2;
+  }
+  
+  .delivery-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #6b7280;
+    padding: 8px 0;
+  }
+  
+  .loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .delivery-time {
+    margin-bottom: 12px;
+  }
+  
+  .delivery-estimate-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #059669;
+    display: block;
+    margin-bottom: 4px;
+  }
+  
+  .custom-message {
+    font-size: 14px;
+    color: #6b7280;
+    font-style: italic;
+  }
+  
+  .delivery-date {
+    margin-top: 8px;
+  }
+  
+  .delivery-date-text {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  
+  .location-selector {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .location-selector label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+  
+  .country-dropdown {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+  
+  .country-dropdown:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  
+  .delivery-error {
+    color: #dc2626;
+    font-size: 14px;
+    text-align: center;
+    padding: 12px;
+    background-color: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+  }
+  
+  .retry-button {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background-color: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .retry-button:hover {
+    background-color: #b91c1c;
+  }
+  
+  @media (max-width: 768px) {
+    .delivery-estimate-block {
+      margin: 12px 0;
+      padding: 16px;
+    }
+    
+    .delivery-title {
+      font-size: 16px;
+    }
+    
+    .delivery-estimate-text {
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    const deliveryBlock = document.querySelector('.delivery-estimate-block');
+    if (!deliveryBlock) return;
+    
+    const productId = deliveryBlock.dataset.productId;
+    const productTags = deliveryBlock.dataset.productTags;
+    const productType = deliveryBlock.dataset.productType;
+    const productVendor = deliveryBlock.dataset.productVendor;
+    const shopDomain = deliveryBlock.dataset.shopDomain;
+    const variantId = deliveryBlock.dataset.variantId;
+    const countrySelect = deliveryBlock.querySelector('.country-dropdown');
+    const deliveryText = deliveryBlock.querySelector('.delivery-estimate-text');
+    const customMessage = deliveryBlock.querySelector('.custom-message');
+    const deliveryDate = deliveryBlock.querySelector('.delivery-date');
+    const deliveryDateText = deliveryBlock.querySelector('.delivery-date-text');
+    const loadingDiv = deliveryBlock.querySelector('.delivery-loading');
+    const resultDiv = deliveryBlock.querySelector('.delivery-result');
+    const errorDiv = deliveryBlock.querySelector('.delivery-error');
+    
+    // Global retry function
+    window.deliveryEstimate = {
+      retry: function() {
+        const selectedCountry = countrySelect ? countrySelect.value : 'US';
+        fetchDeliveryEstimate(selectedCountry);
+      }
+    };
+    
+    function calculateDeliveryDate(estimateDays) {
+      const today = new Date();
+      const deliveryDate = new Date(today);
+      
+      // Parse estimate (e.g., "3-5 business days" or "2 business days")
+      const match = estimateDays.match(/(\d+)(?:-(\d+))?/);
+      if (match) {
+        const minDays = parseInt(match[1]);
+        const maxDays = match[2] ? parseInt(match[2]) : minDays;
+        
+        // Add business days (skip weekends)
+        let businessDaysAdded = 0;
+        while (businessDaysAdded < maxDays) {
+          deliveryDate.setDate(deliveryDate.getDate() + 1);
+          const dayOfWeek = deliveryDate.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
+            businessDaysAdded++;
+          }
+        }
+        
+        return deliveryDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      return null;
+    }
+    
+    async function fetchDeliveryEstimate(country = 'US') {
+      try {
+        loadingDiv.style.display = 'flex';
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        
+        // Build comprehensive API request
+        const params = new URLSearchParams({
+          productId: productId,
+          tags: productTags || '',
+          country: country,
+          shop: shopDomain,
+          variantId: variantId || '',
+          productType: productType || '',
+          vendor: productVendor || ''
+        });
+        
+        const response = await fetch(`/apps/estimatrack/api/delivery-estimate?${params.toString()}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Always show the delivery estimate block
+        loadingDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        
+        deliveryText.textContent = `📦 ${data.estimate}`;
+        
+        // Show custom message if available
+        if (data.customMessage && customMessage) {
+          customMessage.textContent = data.customMessage;
+          customMessage.style.display = 'block';
+        } else if (customMessage) {
+          customMessage.style.display = 'none';
+        }
+        
+        // Calculate and show delivery date
+        if (deliveryDate && deliveryDateText) {
+          const calculatedDate = calculateDeliveryDate(data.estimate);
+          if (calculatedDate) {
+            deliveryDateText.textContent = `Expected by: ${calculatedDate}`;
+            deliveryDate.style.display = 'block';
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error fetching delivery estimate:', error);
+        
+        // Show error state instead of hiding the block
+        loadingDiv.style.display = 'none';
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'block';
+        
+        // Log detailed error for debugging
+        console.log('Delivery estimate error details:', {
+          productId,
+          productTags,
+          country,
+          shopDomain,
+          error: error.message
+        });
+      }
+    }
+    
+    // Detect user's country from browser if possible
+    function detectUserCountry() {
+      if (navigator.language) {
+        const locale = navigator.language.toLowerCase();
+        const countryMap = {
+          'en-us': 'US',
+          'en-ca': 'CA',
+          'en-gb': 'GB',
+          'en-au': 'AU',
+          'de': 'DE',
+          'fr': 'FR',
+          'ja': 'JP',
+          'it': 'IT',
+          'es': 'ES',
+          'nl': 'NL'
+        };
+        
+        for (const [lang, country] of Object.entries(countryMap)) {
+          if (locale.startsWith(lang)) {
+            return country;
+          }
+        }
+      }
+      return 'US'; // Default fallback
+    }
+    
+    // Initial load with detected country
+    const initialCountry = detectUserCountry();
+    if (countrySelect) {
+      countrySelect.value = initialCountry;
+    }
+    fetchDeliveryEstimate(initialCountry);
+    
+    // Update when country changes
+    if (countrySelect) {
+      countrySelect.addEventListener('change', function() {
+        fetchDeliveryEstimate(this.value);
+      });
+    }
+    
+    // Retry on network errors after delay
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    function retryWithBackoff() {
+      if (retryCount < maxRetries) {
+        retryCount++;
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        setTimeout(() => {
+          const selectedCountry = countrySelect ? countrySelect.value : initialCountry;
+          fetchDeliveryEstimate(selectedCountry);
+        }, delay);
+      }
+    }
+    
+    // Listen for network status changes
+    window.addEventListener('online', function() {
+      if (errorDiv.style.display !== 'none') {
+        retryWithBackoff();
+      }
+    });
+    
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Delivery Estimate",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Block Title",
+      "default": "Estimated Delivery",
+      "info": "The title displayed above the delivery estimate"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_location_selector",
+      "label": "Show Country Selector",
+      "default": true,
+      "info": "Allow customers to select their delivery country"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_delivery_date",
+      "label": "Show Expected Delivery Date",
+      "default": true,
+      "info": "Calculate and display the expected delivery date"
+    }
+  ]
+}
+{% endschema %}

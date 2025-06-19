@@ -1,0 +1,39 @@
+# Learn more about configuring your theme app extension:
+# https://shopify.dev/docs/apps/online-store/theme-app-extensions/configuration
+
+api_version = "2024-07"
+type = "theme"
+name = "EstimaTrack Delivery Estimate"
+handle = "estimatrack-delivery-estimate"
+
+[settings]
+[[settings.sections]]
+name = "Delivery Estimate Settings"
+[[settings.sections.settings]]
+id = "api_endpoint"
+type = "url"
+label = "API Endpoint"
+info = "The endpoint for fetching delivery estimates"
+default = "/apps/estimatrack/api/delivery-estimate"
+
+[[settings.sections.settings]]
+id = "default_country"
+type = "select"
+label = "Default Country"
+default = "US"
+options = [
+  { value = "US", label = "United States" },
+  { value = "CA", label = "Canada" },
+  { value = "UK", label = "United Kingdom" },
+  { value = "AU", label = "Australia" },
+  { value = "DE", label = "Germany" },
+  { value = "FR", label = "France" },
+  { value = "JP", label = "Japan" }
+]
+
+[[settings.sections.settings]]
+id = "enable_geolocation"
+type = "checkbox"
+label = "Enable Automatic Country Detection"
+default = true
+info = "Automatically detect customer's country for delivery estimates"

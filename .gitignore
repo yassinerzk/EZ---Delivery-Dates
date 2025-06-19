@@ -1,0 +1,66 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Remix build output
+/build/
+public/build/
+remix.config.js
+remix.config.mjs
+remix.env.d.ts
+.remix/
+
+# Environment variables
+.env
+.env.*.local
+.env.local
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Vscode and IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Dependency cache
+.pnpm/
+.cache/
+.eslintcache
+.next/
+dist/
+
+# Shopify CLI metadata
+.shopify/
+shopify.app.toml
+
+# Optional: macOS files
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+jest-*
+
+# Misc
+*.tgz
+*.zip
+*.tar.gz
+
+# Build artifacts
+*.d.ts
+*.js.map
+
+# If using Docker
+docker-compose.override.yml
+.docker/
