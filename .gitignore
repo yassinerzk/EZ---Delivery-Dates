@@ -39,7 +39,7 @@ dist/
 
 # Shopify CLI metadata
 .shopify/
-shopify.app.toml
+#shopify.app.toml
 
 # Optional: macOS files
 *.swp
@@ -64,3 +64,4 @@ jest-*
 # If using Docker
 docker-compose.override.yml
 .docker/
+.vercel
