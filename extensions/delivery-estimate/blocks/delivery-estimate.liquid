@@ -348,7 +348,7 @@
           vendor: productVendor || ''
         });
         
-        const apiUrl = `{{ block.settings.api_endpoint }}?${params.toString()}`;
+        const apiUrl = `/proxy/estimate?${params.toString()}`;
         
         console.log('📡 EstimaTrack Extension: API request details:', {
           url: apiUrl,
@@ -373,19 +373,13 @@
           headers: Object.fromEntries(response.headers.entries())
         });
         
-        // Debug alert after response
-        alert(`[extensions/delivery-estimate/blocks/delivery-estimate.liquid] 📥 API Response received:\n\nStatus: ${response.status} ${response.statusText}\nOK: ${response.ok}\nURL: ${apiUrl}`);
-        
         if (!response.ok) {
           const errorText = await response.text();
-          
-          // Debug alert for error response
-          alert(`[extensions/delivery-estimate/blocks/delivery-estimate.liquid] ❌ API Error Response:\n\nStatus: ${response.status} ${response.statusText}\nError Text: ${errorText}\nAPI URL: ${apiUrl}`);
-          
-          console.error('❌ EstimaTrack Extension: HTTP error response:', {
+          console.error('💥 EstimaTrack Extension: API Error Response:', {
             status: response.status,
             statusText: response.statusText,
-            body: errorText
+            errorText: errorText,
+            url: apiUrl
           });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -446,7 +440,6 @@
           variantId: variantId,
           productType: productType,
           productVendor: productVendor,
-          apiEndpoint: '{{ block.settings.api_endpoint }}',
           timestamp: new Date().toISOString(),
           country: country,
           retryCount: fetchDeliveryEstimate.retryCount || 0
@@ -618,13 +611,6 @@
   "name": "Delivery Estimate",
   "target": "section",
   "settings": [
-    {
-      "type": "url",
-      "id": "api_endpoint",
-      "label": "API Endpoint",
-      "default": "https://your-vercel-app.vercel.app/data/api/delivery-estimate",
-      "info": "The full URL to your app's API endpoint"
-    },
     {
       "type": "text",
       "id": "title",

@@ -10,13 +10,6 @@ handle = "estimatrack-delivery-estimate"
 [[settings.sections]]
 name = "Delivery Estimate Settings"
 [[settings.sections.settings]]
-id = "api_endpoint"
-type = "url"
-label = "API Endpoint"
-info = "The full URL to your app's API endpoint (e.g., https://your-app.fly.dev/data/api/delivery-estimate)"
-default = "https://your-vercel-app.vercel.app/data/api/delivery-estimate"
-
-[[settings.sections.settings]]
 id = "default_country"
 type = "select"
 label = "Default Country"
