@@ -13,8 +13,8 @@ name = "Delivery Estimate Settings"
 id = "api_endpoint"
 type = "url"
 label = "API Endpoint"
-info = "The endpoint for fetching delivery estimates (uses modular API structure)"
-default = "/data/api/delivery-estimate"
+info = "The full URL to your app's API endpoint (e.g., https://your-app.fly.dev/data/api/delivery-estimate)"
+default = "https://your-vercel-app.vercel.app/data/api/delivery-estimate"
 
 [[settings.sections.settings]]
 id = "default_country"

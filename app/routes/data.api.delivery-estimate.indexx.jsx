@@ -1,5 +1,5 @@
 /**
- * Legacy Route: /apps/estimatrack/api/delivery-estimate (redirects to /data/api/delivery-estimate)
+ * Explicit API Route: /data/api/delivery-estimate/index
  * 
  * This route handles delivery estimate requests from the Shopify theme extension.
  * The actual business logic is handled by the delivery-estimate API module.
@@ -12,7 +12,7 @@
  * @returns {Response} JSON response with delivery estimate
  */
 export async function loader({ request }) {
-  const { handleDeliveryEstimate } = await import("../api/delivery-estimate/index");
+  const { handleDeliveryEstimate } = await import('../api/delivery-estimate/index');
   return handleDeliveryEstimate(request);
 }
 
@@ -23,6 +23,6 @@ export async function loader({ request }) {
  * @returns {Response} CORS response or error
  */
 export async function action({ request }) {
-  const { handleCorsRequest } = await import("../api/delivery-estimate/index");
+  const { handleCorsRequest } = await import('../api/delivery-estimate/index');
   return handleCorsRequest(request);
 }

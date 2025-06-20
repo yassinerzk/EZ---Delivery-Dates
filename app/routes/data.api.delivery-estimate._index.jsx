@@ -1,5 +1,3 @@
-import { handleDeliveryEstimate, handleCorsRequest } from '../api/delivery-estimate/index';
-
 /**
  * Explicit API Route: /data/api/delivery-estimate
  * 
@@ -15,6 +13,7 @@ import { handleDeliveryEstimate, handleCorsRequest } from '../api/delivery-estim
  * @returns {Response} JSON response with delivery estimate
  */
 export async function loader({ request }) {
+  const { handleDeliveryEstimate } = await import('../api/delivery-estimate/handler.js');
   return handleDeliveryEstimate(request);
 }
 
@@ -25,6 +24,7 @@ export async function loader({ request }) {
  * @returns {Response} JSON response with delivery estimate
  */
 export async function action({ request }) {
+  const { handleDeliveryEstimate } = await import('../api/delivery-estimate/handler.js');
   return handleDeliveryEstimate(request);
 }
 
@@ -35,15 +35,5 @@ export async function action({ request }) {
  * @returns {Response} CORS headers response
  */
 export async function options({ request }) {
-  return handleCorsRequest(request);
-}
-
-/**
- * Handles POST and OPTIONS requests (mainly for CORS)
- * @param {Object} params - Route parameters
- * @param {Request} params.request - The incoming request
- * @returns {Response} CORS response or error
- */
-export async function action({ request }) {
   return handleCorsRequest(request);
 }

@@ -1,6 +1,4 @@
 import { json } from "@remix-run/node";
-import { metrics } from "../api/delivery-estimate/metrics";
-import { rateLimiter } from "../api/delivery-estimate/utils";
 
 /**
  * Health check endpoint for monitoring API status
@@ -8,6 +6,9 @@ import { rateLimiter } from "../api/delivery-estimate/utils";
  */
 export async function loader({ request }) {
   try {
+    const { metrics } = await import("../api/delivery-estimate/metrics");
+    const { rateLimiter } = await import("../api/delivery-estimate/utils");
+    
     const healthStatus = metrics.getHealthStatus();
     const rateLimiterStats = rateLimiter.getStats();
     const apiStats = metrics.getStats();

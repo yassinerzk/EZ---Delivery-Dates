@@ -3,7 +3,9 @@
   "private": true,
   "scripts": {
     "build": "remix vite:build",
-    "dev": "shopify app dev",
+    "dev": "npm run sync:urls && shopify app dev",
+    "dev:no-sync": "shopify app dev",
+    "sync:urls": "node scripts/sync-urls.mjs",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
     "deploy": "shopify app deploy",

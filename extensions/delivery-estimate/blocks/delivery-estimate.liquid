@@ -348,10 +348,7 @@
           vendor: productVendor || ''
         });
         
-        const apiUrl = `{{ block.settings.api_endpoint | default: '/data/api/delivery-estimate' }}?${params.toString()}`;
-        
-        // Debug alert before request
-        alert(`[extensions/delivery-estimate/blocks/delivery-estimate.liquid] 🚀 About to make API request to: ${apiUrl}\n\nParameters:\n${JSON.stringify(Object.fromEntries(params), null, 2)}`);
+        const apiUrl = `{{ block.settings.api_endpoint }}?${params.toString()}`;
         
         console.log('📡 EstimaTrack Extension: API request details:', {
           url: apiUrl,
@@ -383,7 +380,7 @@
           const errorText = await response.text();
           
           // Debug alert for error response
-          alert(`[extensions/delivery-estimate/blocks/delivery-estimate.liquid] ❌ API Error Response:\n\nStatus: ${response.status} ${response.statusText}\nError Text: ${errorText}\nFull URL: ${window.location.origin}${apiUrl}`);
+          alert(`[extensions/delivery-estimate/blocks/delivery-estimate.liquid] ❌ API Error Response:\n\nStatus: ${response.status} ${response.statusText}\nError Text: ${errorText}\nAPI URL: ${apiUrl}`);
           
           console.error('❌ EstimaTrack Extension: HTTP error response:', {
             status: response.status,
@@ -449,7 +446,7 @@
           variantId: variantId,
           productType: productType,
           productVendor: productVendor,
-          apiEndpoint: '{{ block.settings.api_endpoint | default: '/data/api/delivery-estimate' }}',
+          apiEndpoint: '{{ block.settings.api_endpoint }}',
           timestamp: new Date().toISOString(),
           country: country,
           retryCount: fetchDeliveryEstimate.retryCount || 0
