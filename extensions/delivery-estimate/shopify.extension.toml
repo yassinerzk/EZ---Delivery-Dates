@@ -14,7 +14,7 @@ id = "api_endpoint"
 type = "url"
 label = "API Endpoint"
 info = "The endpoint for fetching delivery estimates (uses modular API structure)"
-default = "/apps/estimatrack/api/delivery-estimate"
+default = "/data/api/delivery-estimate"
 
 [[settings.sections.settings]]
 id = "default_country"

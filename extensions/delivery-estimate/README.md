@@ -16,7 +16,7 @@ A Shopify theme app extension that displays dynamic delivery estimates based on 
 
 This extension integrates with the modular delivery estimate API:
 
-- **Endpoint**: `/apps/estimatrack/api/delivery-estimate`
+- **Endpoint**: `/data/api/delivery-estimate`
 - **Method**: GET
 - **Parameters**:
   - `productId`: Shopify product ID
@@ -34,7 +34,7 @@ The extension can be configured through the Shopify theme editor:
 ### Settings
 
 1. **API Endpoint**: The endpoint for fetching delivery estimates
-   - Default: `/apps/estimatrack/api/delivery-estimate`
+   - Default: `/data/api/delivery-estimate`
    - Uses the modular API structure
 
 2. **Default Country**: Fallback country for delivery estimates
@@ -121,7 +121,7 @@ The extension logs detailed error information to the browser console:
   variantId: "987654321",
   productType: "Electronics",
   productVendor: "Brand Name",
-  apiEndpoint: "/apps/estimatrack/api/delivery-estimate",
+  apiEndpoint: "/data/api/delivery-estimate",
   error: "Error message",
   timestamp: "2024-01-01T00:00:00.000Z"
 }

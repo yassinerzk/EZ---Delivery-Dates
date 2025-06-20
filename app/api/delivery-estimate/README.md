@@ -38,7 +38,7 @@ JSDoc type definitions for better IntelliSense and documentation.
 
 ### In Route Files
 ```javascript
-import { handleDeliveryEstimate, handleCorsRequest } from "../api/delivery-estimate/index.js";
+import { handleDeliveryEstimate, handleCorsRequest } from "../api/delivery-estimate/index";
 
 export async function loader({ request }) {
   return handleDeliveryEstimate(request);
@@ -55,7 +55,7 @@ import {
   validateRequest, 
   formatDeliveryEstimate, 
   createCorsHeaders 
-} from "../api/delivery-estimate/index.js";
+} from "../api/delivery-estimate/index";
 
 // Validate request parameters
 const { productId, error } = validateRequest(request, session);
@@ -69,7 +69,7 @@ const headers = createCorsHeaders();
 
 ## API Endpoints
 
-### GET `/apps/estimatrack/api/delivery-estimate`
+### GET `/data/api/delivery-estimate`
 
 Retrieves delivery estimates for products.
 
@@ -92,7 +92,7 @@ Retrieves delivery estimates for products.
 }
 ```
 
-### OPTIONS `/apps/estimatrack/api/delivery-estimate`
+### OPTIONS `/data/api/delivery-estimate`
 
 Handles CORS preflight requests.
 

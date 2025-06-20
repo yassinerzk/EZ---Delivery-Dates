@@ -1,7 +1,7 @@
 import { data } from "@remix-run/node";
 import { authenticate } from "../../shopify.server";
 import { getMatchingDeliveryRules, getDefaultDeliveryRule } from "../../lib/supabase.server.ts";
-import { validateRequest, formatDeliveryEstimate, createCorsHeaders, rateLimiter } from "./utils.js";
+import { validateRequest, formatDeliveryEstimate, createCorsHeaders, rateLimiter } from "./utils";
 import { logger } from "./logger";
 import { metrics } from "./metrics";
 
@@ -18,7 +18,7 @@ export async function handleDeliveryEstimate(request) {
     // Rate limiting
     const rateLimitResult = await rateLimiter.check(request);
     if (!rateLimitResult.allowed) {
-      logger.warn('Rate limit exceeded', { requestId, ip: rateLimitResult.ip });
+      logger.warn('[app/api/delivery-estimate/handler.js] Rate limit exceeded', { requestId, ip: rateLimitResult.ip });
       const headers = createCorsHeaders();
       return data(
         { error: "Rate limit exceeded", retryAfter: rateLimitResult.retryAfter },
@@ -35,11 +35,11 @@ export async function handleDeliveryEstimate(request) {
     const headers = createCorsHeaders();
     
     if (validationError) {
-      logger.warn('Invalid request parameters', { requestId, error: validationError });
+      logger.warn('[app/api/delivery-estimate/handler.js] Invalid request parameters', { requestId, error: validationError });
       return data({ error: validationError }, { status: 400, headers });
     }
     
-    logger.info('Processing delivery estimate request', {
+    logger.info('[app/api/delivery-estimate/handler.js] Processing delivery estimate request', {
       requestId,
       productId,
       country,
@@ -57,7 +57,7 @@ export async function handleDeliveryEstimate(request) {
     const { data: matchingRules, error } = await getMatchingDeliveryRules(product, country, shop);
     
     if (error) {
-      logger.error('Error fetching delivery rules', { requestId, error });
+      logger.error('[app/api/delivery-estimate/handler.js] Error fetching delivery rules', { requestId, error });
       return data({ error: 'Failed to fetch delivery estimate' }, { status: 500, headers });
     }
     
@@ -76,7 +76,7 @@ export async function handleDeliveryEstimate(request) {
         shopId: shop
       });
       
-      logger.info('Delivery estimate calculated successfully', {
+      logger.info('[app/api/delivery-estimate/handler.js] Delivery estimate calculated successfully', {
         requestId,
         duration,
         ruleName: bestMatch.target_value
@@ -111,7 +111,7 @@ export async function handleDeliveryEstimate(request) {
           shopId: shop
         });
         
-        logger.info('Default delivery estimate used', {
+        logger.info('[app/api/delivery-estimate/handler.js] Default delivery estimate used', {
           requestId,
           duration
         });
@@ -139,7 +139,7 @@ export async function handleDeliveryEstimate(request) {
       shopId: shop
     });
     
-    logger.info('Generic default estimate used', {
+    logger.info('[app/api/delivery-estimate/handler.js] Generic default estimate used', {
       requestId,
       duration
     });
@@ -157,7 +157,7 @@ export async function handleDeliveryEstimate(request) {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    logger.error('Error processing delivery estimate request', {
+    logger.error('[app/api/delivery-estimate/handler.js] Error processing delivery estimate request', {
       requestId,
       error: error.message,
       stack: error.stack,

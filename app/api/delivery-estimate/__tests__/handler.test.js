@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { handleDeliveryEstimate, handleCorsRequest } from '../handler.js';
-import { metrics } from '../metrics.js';
-import { rateLimiter } from '../utils.js';
+import { handleDeliveryEstimate, handleCorsRequest } from '../handler';
+import { metrics } from '../metrics';
+import { rateLimiter } from '../utils';
 
 // Mock dependencies
 vi.mock('../../../shopify.server', () => ({
@@ -348,7 +348,7 @@ describe('Delivery Estimate Integration', () => {
     vi.spyOn(rateLimiter, 'check').mockResolvedValue({ allowed: true, ip: '192.168.1.1' });
     
     const request = new Request(
-      'https://real-store.myshopify.com/apps/estimatrack/data/api/delivery-estimate?productId=7891234567890&country=US'
+      'https://real-store.myshopify.com/data/api/delivery-estimate?productId=7891234567890&country=US'
     );
     
     const response = await handleDeliveryEstimate(request);

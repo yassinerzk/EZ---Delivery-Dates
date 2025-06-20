@@ -163,7 +163,7 @@ All responses are in JSON format and include:
 async function getDeliveryEstimate(productId, country) {
   try {
     const response = await fetch(
-      `/apps/estimatrack/data/api/delivery-estimate?productId=${productId}&country=${country}`
+      `/data/api/delivery-estimate?productId=${productId}&country=${country}`
     );
     
     if (!response.ok) {
@@ -198,7 +198,7 @@ getDeliveryEstimate('123456789', 'US')
     const productId = '{{ product.id }}';
     const country = '{{ localization.country.iso_code }}';
     
-    fetch(`/apps/estimatrack/data/api/delivery-estimate?productId=${productId}&country=${country}`)
+    fetch(`/data/api/delivery-estimate?productId=${productId}&country=${country}`)
       .then(response => response.json())
       .then(data => {
         if (data.estimate) {

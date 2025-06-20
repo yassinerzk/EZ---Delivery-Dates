@@ -1,4 +1,4 @@
-import { handleDeliveryEstimate, handleCorsRequest } from '../../api/delivery-estimate/index.js';
+import { handleDeliveryEstimate, handleCorsRequest } from '../api/delivery-estimate/index';
 
 /**
  * Explicit API Route: /data/api/delivery-estimate/index

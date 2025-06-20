@@ -6,7 +6,7 @@
  * and proper error handling.
  */
 
-export { handleDeliveryEstimate, handleCorsRequest } from './handler.js';
+export { handleDeliveryEstimate, handleCorsRequest } from './handler';
 export { 
   validateRequest, 
   formatDeliveryEstimate, 
@@ -17,7 +17,7 @@ export {
   DEFAULT_COUNTRY,
   DEFAULT_ESTIMATE,
   DEFAULT_RULE_NAME
-} from './utils.js';
+} from './utils';
 
 /**
  * API version for tracking compatibility

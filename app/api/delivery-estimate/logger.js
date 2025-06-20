@@ -22,6 +22,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       context: this.context,
+      file: '[app/api/delivery-estimate/logger.js]',
       message,
       ...metadata,
       environment: process.env.NODE_ENV || 'development'

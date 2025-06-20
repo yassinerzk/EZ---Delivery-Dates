@@ -1,7 +1,7 @@
-import { handleDeliveryEstimate, handleCorsRequest } from "../api/delivery-estimate/index.js";
+import { handleDeliveryEstimate, handleCorsRequest } from "../api/delivery-estimate/index";
 
 /**
- * App Proxy Route: /apps/estimatrack/api/delivery-estimate
+ * Legacy Route: /apps/estimatrack/api/delivery-estimate (redirects to /data/api/delivery-estimate)
  * 
  * This route handles delivery estimate requests from the Shopify theme extension.
  * The actual business logic is handled by the delivery-estimate API module.

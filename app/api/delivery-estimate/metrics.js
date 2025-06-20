@@ -137,7 +137,7 @@ class Metrics {
       recentErrors: this.stats.errors.recent.slice(0, 3)
     };
     
-    console.log('📊 Delivery Estimate API Metrics Summary:', JSON.stringify(summary, null, 2));
+    console.log('[app/api/delivery-estimate/metrics.js] 📊 Delivery Estimate API Metrics Summary:', JSON.stringify(summary, null, 2));
   }
 
   reset() {
