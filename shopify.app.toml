@@ -3,7 +3,7 @@
 client_id = "21da9835ea07876101b969795c689201"
 name = "EZ estimated delivery - Klay"
 handle = "ez-estimated-delivery-klay"
-application_url = "https://your-vercel-app.vercel.app"
+application_url = "https://ez-delivery-dates.vercel.app"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-04"
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://your-vercel-app.vercel.app/auth/callback", "https://your-vercel-app.vercel.app/auth/shopify/callback", "https://your-vercel-app.vercel.app/api/auth/callback"]
+redirect_urls = ["https://ez-delivery-dates.vercel.app/auth/callback", "https://ez-delivery-dates.vercel.app/auth/shopify/callback", "https://ez-delivery-dates.vercel.app/api/auth/callback"]
 
 [pos]
 embedded = false
