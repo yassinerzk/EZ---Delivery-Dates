@@ -3,11 +3,6 @@ import { supabaseAdminTyped } from './supabase';
 // Use the admin client for server-side operations
 const supabase = supabaseAdminTyped;
 
-/**
- * Fetch delivery rules from Supabase database
- * Expected table structure: delivery_rules
- * Columns: id, shop, target_type, target_value, country_codes, estimated_min_days, estimated_max_days, custom_message, enabled, created_at
- */
 export async function getDeliveryRules(shop?: string) {
   if (!supabase) {
     // Return mock data if Supabase is not configured
@@ -52,6 +47,7 @@ export async function getDeliveryRules(shop?: string) {
       ],
       error: null
     };
+    console.log('No data supabase Fetched delivery rules for shop:', shop);
   }
 
   try {
@@ -60,6 +56,7 @@ export async function getDeliveryRules(shop?: string) {
       .select('*')
       .eq('enabled', true)
       .order('created_at', { ascending: false });
+      console.log('Number of reasponse from supabase :', (await query).count);
     
     if (shop) {
       query = query.eq('shop', shop);

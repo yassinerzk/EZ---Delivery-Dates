@@ -1,8 +1,7 @@
 /**
- * Explicit API Route: /data/api/delivery-estimate
+ * Explicit API Route: /data/api/delivery-estimate/index
  * 
  * This route handles delivery estimate requests from the Shopify theme extension.
- * Uses the _index convention for cleaner URL structure.
  * The actual business logic is handled by the delivery-estimate API module.
  */
 
@@ -18,22 +17,12 @@ export async function loader({ request }) {
 }
 
 /**
- * Handles POST requests for delivery estimates
+ * Handles POST and OPTIONS requests (mainly for CORS)
  * @param {Object} params - Route parameters
  * @param {Request} params.request - The incoming request
- * @returns {Response} JSON response with delivery estimate
+ * @returns {Response} CORS response or error
  */
 export async function action({ request }) {
-  const { handleDeliveryEstimate } = await import('../api/delivery-estimate/handler.js');
-  return handleDeliveryEstimate(request);
-}
-
-/**
- * Handles OPTIONS requests for CORS
- * @param {Object} params - Route parameters
- * @param {Request} params.request - The incoming request
- * @returns {Response} CORS headers response
- */
-export async function options({ request }) {
+  const { handleCorsRequest } = await import('../api/delivery-estimate/handler.js');
   return handleCorsRequest(request);
 }

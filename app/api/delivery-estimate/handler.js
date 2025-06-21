@@ -64,7 +64,9 @@ export async function handleDeliveryEstimate(request) {
     // Return the first matching rule (highest priority)
     if (matchingRules && matchingRules.length > 0) {
       const bestMatch = matchingRules[0];
-      const estimate = formatDeliveryEstimate(bestMatch.estimated_min_days, bestMatch.estimated_max_days);
+      // Return raw min/max days for extension formatting
+        const minDays = bestMatch.estimated_min_days;
+        const maxDays = bestMatch.estimated_max_days;
       
       // Metrics
       const duration = Date.now() - startTime;
@@ -83,7 +85,8 @@ export async function handleDeliveryEstimate(request) {
       });
       
       return data({
-        estimate: estimate,
+          minDays: minDays,
+          maxDays: maxDays,
         ruleName: bestMatch.target_value,
         productId: productId,
         country: country,
@@ -99,7 +102,9 @@ export async function handleDeliveryEstimate(request) {
       const { data: defaultRule, error: defaultError } = await getDefaultDeliveryRule(shop);
       
       if (!defaultError && defaultRule) {
-        const estimate = formatDeliveryEstimate(defaultRule.estimated_min_days, defaultRule.estimated_max_days);
+        // Return raw min/max days for extension formatting
+        const minDays = defaultRule.estimated_min_days;
+        const maxDays = defaultRule.estimated_max_days;
         
         // Metrics
         const duration = Date.now() - startTime;
@@ -117,7 +122,8 @@ export async function handleDeliveryEstimate(request) {
         });
         
         return data({
-          estimate: estimate,
+          minDays: minDays,
+          maxDays: maxDays,
           ruleName: 'Default Shipping',
           productId: productId,
           country: country,
@@ -144,8 +150,10 @@ export async function handleDeliveryEstimate(request) {
       duration
     });
     
+    // Return default min/max days for extension formatting
     return data({
-      estimate: '5-7 business days',
+      minDays: 5,
+      maxDays: 7,
       ruleName: 'Standard Shipping',
       productId: productId,
       country: country,
@@ -173,7 +181,10 @@ export async function handleDeliveryEstimate(request) {
     });
     
     const headers = createCorsHeaders();
+    // Return fallback min/max days for extension formatting
     return data({
+      minDays: 5, // Fallback minimum days
+      maxDays: 7, // Fallback maximum days
       error: 'Internal server error',
       requestId,
       timestamp: new Date().toISOString()

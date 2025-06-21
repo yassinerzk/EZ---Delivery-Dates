@@ -3,7 +3,7 @@
 client_id = "21da9835ea07876101b969795c689201"
 name = "EZ estimated delivery - Klay"
 handle = "ez-estimated-delivery-klay"
-application_url = "https://amd-optics-compensation-seasons.trycloudflare.com"
+application_url = "https://belize-retail-returns-sec.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,10 +26,10 @@ api_version = "2025-04"
 scopes = "write_app_proxy,write_products"
 
 [auth]
-redirect_urls = ["https://amd-optics-compensation-seasons.trycloudflare.com/auth/callback", "https://amd-optics-compensation-seasons.trycloudflare.com/auth/shopify/callback", "https://amd-optics-compensation-seasons.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://belize-retail-returns-sec.trycloudflare.com/auth/callback", "https://belize-retail-returns-sec.trycloudflare.com/auth/shopify/callback", "https://belize-retail-returns-sec.trycloudflare.com/api/auth/callback"]
 
 [app_proxy]
-url = "https://amd-optics-compensation-seasons.trycloudflare.com/data/api/delivery-estimate"
+url = "https://belize-retail-returns-sec.trycloudflare.com/data/api/delivery-estimate"
 subpath = "estimate"
 prefix = "apps"
 
