@@ -6,36 +6,59 @@ export const DEFAULT_ESTIMATE = '5-7 business days';
 export const DEFAULT_RULE_NAME = 'Standard Shipping';
 
 /**
- * Validates the incoming request parameters
- * @param {string} productId - The product ID
- * @param {string} country - The country code
- * @returns {string|null} - Error message if validation fails, null if valid
+ * Validates the incoming request parameters from app proxy
+ * @param {Request} request - The incoming request
+ * @param {Object} session - The authenticated session
+ * @returns {Object} - Extracted and validated parameters or error
  */
-export function validateRequest(productId, country) {
-  if (!productId || typeof productId !== 'string' || productId.trim() === '') {
-    return 'Product ID is required and must be a non-empty string';
+export function validateRequest(request, session) {
+  try {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+    
+    // Extract parameters from query string (app proxy format)
+    const productId = searchParams.get('productId') || searchParams.get('product_id');
+    const country = searchParams.get('country') || DEFAULT_COUNTRY;
+    const tags = searchParams.get('tags');
+    const variantId = searchParams.get('variantId') || searchParams.get('variant_id');
+    const shop = session?.shop || searchParams.get('shop');
+    
+    // Validate required parameters
+    if (!productId || typeof productId !== 'string' || productId.trim() === '') {
+      return { error: 'Product ID is required and must be a non-empty string' };
+    }
+    
+    if (!country || typeof country !== 'string' || country.trim() === '') {
+      return { error: 'Country is required and must be a non-empty string' };
+    }
+    
+    // Basic country code validation (2-3 characters)
+    if (country.length < 2 || country.length > 3) {
+      return { error: 'Country must be a valid 2-3 character country code' };
+    }
+    
+    // Validate product ID format (basic Shopify product ID validation)
+    if (!/^\d+$/.test(productId)) {
+      return { error: 'Product ID must contain only numbers' };
+    }
+    
+    // Validate country code format (letters only)
+    if (!/^[A-Za-z]+$/.test(country)) {
+      return { error: 'Country code must contain only letters' };
+    }
+    
+    return {
+      productId: productId.trim(),
+      country: country.toUpperCase().trim(),
+      tags: tags ? tags.trim() : null,
+      variantId: variantId ? variantId.trim() : null,
+      shop: shop ? shop.trim() : null,
+      error: null
+    };
+    
+  } catch (err) {
+    return { error: `Invalid request format: ${err.message}` };
   }
-  
-  if (!country || typeof country !== 'string' || country.trim() === '') {
-    return 'Country is required and must be a non-empty string';
-  }
-  
-  // Basic country code validation (2-3 characters)
-  if (country.length < 2 || country.length > 3) {
-    return 'Country must be a valid 2-3 character country code';
-  }
-  
-  // Validate product ID format (basic Shopify product ID validation)
-  if (!/^\d+$/.test(productId)) {
-    return 'Product ID must contain only numbers';
-  }
-  
-  // Validate country code format (letters only)
-  if (!/^[A-Za-z]+$/.test(country)) {
-    return 'Country code must contain only letters';
-  }
-  
-  return null; // Valid
 }
 
 /**

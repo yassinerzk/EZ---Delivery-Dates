@@ -3,33 +3,33 @@
 client_id = "21da9835ea07876101b969795c689201"
 name = "EZ estimated delivery - Klay"
 handle = "ez-estimated-delivery-klay"
-application_url = "https://extra-attending-efforts-realtor.trycloudflare.com"
+application_url = "https://amd-optics-compensation-seasons.trycloudflare.com"
 embedded = true
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
+include_config_on_deploy = true
 
 [webhooks]
 api_version = "2025-04"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
-
-  [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_app_proxy"
+scopes = "write_app_proxy,write_products"
 
 [auth]
-redirect_urls = ["https://extra-attending-efforts-realtor.trycloudflare.com/auth/callback", "https://extra-attending-efforts-realtor.trycloudflare.com/auth/shopify/callback", "https://extra-attending-efforts-realtor.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://amd-optics-compensation-seasons.trycloudflare.com/auth/callback", "https://amd-optics-compensation-seasons.trycloudflare.com/auth/shopify/callback", "https://amd-optics-compensation-seasons.trycloudflare.com/api/auth/callback"]
 
 [app_proxy]
-url = "https://extra-attending-efforts-realtor.trycloudflare.com/app/delivery-estimate"
+url = "https://amd-optics-compensation-seasons.trycloudflare.com/data/api/delivery-estimate"
 subpath = "estimate"
 prefix = "apps"
 
