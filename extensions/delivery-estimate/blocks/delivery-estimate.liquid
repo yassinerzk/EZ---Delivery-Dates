@@ -384,29 +384,50 @@
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
-        console.log('📊 EstimaTrack Extension: Parsed response data:', data);
-        
+        const { data } = await response.json();
+        console.log('📊 EstimaTrack Extension: Parsed response data:', data , data.maxDays , data.minDays);
+        const isNumber = (value) => typeof value === 'number' && !isNaN(value);
+
+
         // Validate API response structure
         console.log('🔍 EstimaTrack Extension: Validating response structure');
-        if (!data || typeof data.estimate !== 'string') {
+        if (!data || !isNumber(data.minDays) || !isNumber(data.maxDays)) {
           console.error('❌ EstimaTrack Extension: Invalid response structure:', {
+            data: data,
             hasData: !!data,
-            estimateType: typeof data?.estimate,
-            estimateValue: data?.estimate
+            minDaysValue: data.minDays,
+            maxDaysValue: data.maxDays
           });
-          throw new Error('Invalid API response: missing estimate field');
+          throw new Error('Invalid API response: missing minDays or maxDays fields');
         }
         
         console.log('✅ EstimaTrack Extension: Response validation passed');
         
-        // Update UI with delivery estimate
-        console.log('🎨 EstimaTrack Extension: Updating UI with estimate:', data.estimate);
+        // Format delivery estimate from minDays and maxDays
+        let estimateText;
+        if (data.minDays && data.maxDays && data.minDays !== data.maxDays) {
+          estimateText = `${data.minDays}-${data.maxDays} business days`;
+        } else if (data.minDays || data.maxDays) {
+          const days = data.minDays || data.maxDays;  
+          estimateText = `${days} business day${days > 1 ? 's' : ''}`;
+        } else {
+          estimateText = '3-5 business days'; // fallback
+        }
+        
+        console.log('🎯 EstimaTrack Extension: Formatted estimate text:', estimateText);
+        
+        // Apply delivery estimate to the DOM
+        if (deliveryText) {
+          deliveryText.textContent = estimateText;
+          console.log('📝 EstimaTrack Extension: Updated delivery text element');
+        }
+        // Update UI with delivery estimate   
+        console.log('🎨 EstimaTrack Extension: Updating UI with estimate:', estimateText);
         loadingDiv.style.display = 'none';
         resultDiv.style.display = 'block';
         
         if (deliveryText) {
-          deliveryText.textContent = `📦 ${data.estimate}`;
+          deliveryText.textContent = `📦 ${estimateText}`;
           console.log('📝 EstimaTrack Extension: Updated delivery text element');
         }
         
@@ -418,8 +439,9 @@
           customMessage.style.display = 'none';
         }
         
-        // Calculate and display delivery date if estimate contains days
-        const deliveryDateResult = calculateDeliveryDate(data.estimate);
+        // Calculate and display delivery date using estimatedMinDays and estimatedMaxDays
+        const avgDays = data.estimatedMinDays && data.estimatedMaxDays ? Math.ceil((data.estimatedMinDays + data.estimatedMaxDays) / 2) : (data.estimatedMinDays || data.estimatedMaxDays || 4);
+        const deliveryDateResult = calculateDeliveryDate(`${avgDays} business days`);
         console.log('📅 EstimaTrack Extension: Calculated delivery date:', deliveryDateResult);
         if (deliveryDateResult && deliveryDate && deliveryDateText) {
           deliveryDate.style.display = 'block';
