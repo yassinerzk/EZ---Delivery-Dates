@@ -3,7 +3,7 @@
 client_id = "21da9835ea07876101b969795c689201"
 name = "EZ estimated delivery - Klay"
 handle = "ez-estimated-delivery-klay"
-application_url = "https://surgeons-rx-commons-homework.trycloudflare.com"
+application_url = "https://extra-attending-efforts-realtor.trycloudflare.com"
 embedded = true
 
 [build]
@@ -23,10 +23,15 @@ api_version = "2025-04"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "write_products,write_app_proxy"
 
 [auth]
-redirect_urls = ["https://surgeons-rx-commons-homework.trycloudflare.com/auth/callback", "https://surgeons-rx-commons-homework.trycloudflare.com/auth/shopify/callback", "https://surgeons-rx-commons-homework.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://extra-attending-efforts-realtor.trycloudflare.com/auth/callback", "https://extra-attending-efforts-realtor.trycloudflare.com/auth/shopify/callback", "https://extra-attending-efforts-realtor.trycloudflare.com/api/auth/callback"]
+
+[app_proxy]
+url = "https://extra-attending-efforts-realtor.trycloudflare.com/app/delivery-estimate"
+subpath = "estimate"
+prefix = "apps"
 
 [pos]
 embedded = false

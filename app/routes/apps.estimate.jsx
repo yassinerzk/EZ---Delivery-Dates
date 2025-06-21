@@ -1,5 +1,6 @@
-import { json } from "@remix-run/node";
+import { json } from '@remix-run/node';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -7,9 +8,44 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Verify Shopify signature
+function verifyShopifySignature(query, signature, secret) {
+  const sortedQuery = Object.keys(query)
+    .filter(key => key !== 'signature' && key !== 'hmac')
+    .sort()
+    .map(key => `${key}=${query[key]}`)
+    .join('&');
+  
+  const calculatedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(sortedQuery)
+    .digest('hex');
+  
+  return calculatedSignature === signature;
+}
+
 export const loader = async ({ request }) => {
   try {
     const url = new URL(request.url);
+    
+    // Extract all query parameters for signature verification
+    const queryParams = {};
+    url.searchParams.forEach((value, key) => {
+      queryParams[key] = value;
+    });
+    
+    // Verify Shopify signature (optional but recommended for production)
+    const signature = url.searchParams.get('signature');
+    const shopifySecret = process.env.SHOPIFY_API_SECRET;
+    
+    if (signature && shopifySecret) {
+      const isValidSignature = verifyShopifySignature(queryParams, signature, shopifySecret);
+      if (!isValidSignature) {
+        console.warn('⚠️ Invalid Shopify signature detected');
+        // In production, you might want to return an error here
+        // return json({ error: "Invalid signature" }, { status: 401 });
+      }
+    }
     const productId = url.searchParams.get("product_id") || url.searchParams.get("productId");
     const shop = url.searchParams.get("shop");
     const country = url.searchParams.get("country") || "US";
