@@ -46,58 +46,8 @@ export async function handleDeliveryEstimate(request) {
       shopId: shop
     });
     
-    // Create a product object for matching
-    const product = {
-      id: productId,
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-      variantId: variantId
-    };
-    
-    // Get matching delivery rules
-    const { data: matchingRules, error } = await getMatchingDeliveryRules(product, country, shop);
-    
-    if (error) {
-      logger.error('[app/api/delivery-estimate/handler.js] Error fetching delivery rules', { requestId, error });
-      return data({ error: 'Failed to fetch delivery estimate' }, { status: 500, headers });
-    }
-    
-    // Return the first matching rule (highest priority)
-    if (matchingRules && matchingRules.length > 0) {
-      const bestMatch = matchingRules[0];
-      // Return raw min/max days for extension formatting
-        const minDays = bestMatch.estimated_min_days;
-        const maxDays = bestMatch.estimated_max_days;
-      
-      // Metrics
-      const duration = Date.now() - startTime;
-      metrics.recordRequest({
-        endpoint: 'delivery-estimate',
-        method: 'GET',
-        status: 200,
-        duration,
-        shopId: shop
-      });
-      
-      logger.info('[app/api/delivery-estimate/handler.js] Delivery estimate calculated successfully', {
-        requestId,
-        duration,
-        ruleName: bestMatch.target_value
-      });
-      
-      return data({
-          minDays: minDays,
-          maxDays: maxDays,
-        ruleName: bestMatch.target_value,
-        productId: productId,
-        country: country,
-        customMessage: bestMatch.custom_message,
-        isDefault: false,
-        requestId,
-        timestamp: new Date().toISOString()
-      }, { headers });
-    }
-    
-    // Try to get shop's default rule
+    // Only use default rules for products as per requirements
+    // Try to get shop's default rule (latest one if multiple exist)
     if (shop) {
       const { data: defaultRule, error: defaultError } = await getDefaultDeliveryRule(shop);
       
@@ -135,7 +85,7 @@ export async function handleDeliveryEstimate(request) {
       }
     }
     
-    // No matching rules and no default rule found, return generic default
+    // No default rule found, return flag to hide section
     const duration = Date.now() - startTime;
     metrics.recordRequest({
       endpoint: 'delivery-estimate',
@@ -145,19 +95,16 @@ export async function handleDeliveryEstimate(request) {
       shopId: shop
     });
     
-    logger.info('[app/api/delivery-estimate/handler.js] Generic default estimate used', {
+    logger.info('[app/api/delivery-estimate/handler.js] No delivery rules found, hiding section', {
       requestId,
       duration
     });
     
-    // Return default min/max days for extension formatting
+    // Return flag to indicate no rules found so frontend can hide the section
     return data({
-      minDays: 5,
-      maxDays: 7,
-      ruleName: 'Standard Shipping',
+      noRulesFound: true,
       productId: productId,
       country: country,
-      isDefault: true,
       requestId,
       timestamp: new Date().toISOString()
     }, { headers });

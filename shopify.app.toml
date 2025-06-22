@@ -3,7 +3,7 @@
 client_id = "21da9835ea07876101b969795c689201"
 name = "EZ estimated delivery - Klay"
 handle = "ez-estimated-delivery-klay"
-application_url = "https://unity-developments-autos-casting.trycloudflare.com"
+application_url = "https://treasury-efficiently-die-interpretation.trycloudflare.com"
 embedded = true
 
 [build]
@@ -23,13 +23,13 @@ api_version = "2025-04"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_app_proxy,write_products"
+scopes = "write_app_proxy,write_products,read_products"
 
 [auth]
-redirect_urls = ["https://unity-developments-autos-casting.trycloudflare.com/auth/callback", "https://unity-developments-autos-casting.trycloudflare.com/auth/shopify/callback", "https://unity-developments-autos-casting.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://treasury-efficiently-die-interpretation.trycloudflare.com/auth/callback", "https://treasury-efficiently-die-interpretation.trycloudflare.com/auth/shopify/callback", "https://treasury-efficiently-die-interpretation.trycloudflare.com/api/auth/callback"]
 
 [app_proxy]
-url = "https://unity-developments-autos-casting.trycloudflare.com/data/api/delivery-estimate"
+url = "https://treasury-efficiently-die-interpretation.trycloudflare.com/data/api/delivery-estimate"
 subpath = "estimate"
 prefix = "apps"
 

@@ -29,7 +29,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLoaderData, useFetcher } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { saveDeliveryRule } from "../lib/supabase.server.ts";
+import { saveDeliveryRule, attachRuleMetafieldToProduct } from "../lib/supabase.server.ts";
 
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
@@ -106,6 +106,22 @@ export const action = async ({ request }) => {
       if (error) {
         console.error('Database error:', error);
         return json({ success: false, error: 'Failed to save delivery rule to database' }, { status: 500 });
+      }
+
+      // After successful rule save, create/update product metafield if target is a product
+      if (data && targetType === 'product' && targetValue) {
+        // Convert product ID to GraphQL format if needed
+        const productId = targetValue.startsWith('gid://') ? targetValue : `gid://shopify/Product/${targetValue}`;
+        
+        const metafieldResult = await attachRuleMetafieldToProduct(productId, data.id, admin);
+        
+        if (!metafieldResult.success) {
+          console.error('Failed to create/update product metafield:', metafieldResult.error);
+          // Note: We don't fail the entire operation if metafield creation fails
+          // The rule is still saved successfully
+        } else {
+          console.log('Product metafield created/updated successfully for rule:', data.id);
+        }
       }
       
       console.log('Delivery rule saved successfully:', data);
@@ -504,16 +520,6 @@ export default function NewDeliveryRule() {
     setCountryQuery('');
   }, [countries]);
 
-  // Update form data when country selection changes
-  useEffect(() => {
-    if (countrySelection.type === 'all') {
-      setFormData(prev => ({ ...prev, countryCodes: 'ALL' }));
-    } else {
-      const codes = countrySelection.countries.map(c => c.code).join(', ');
-      setFormData(prev => ({ ...prev, countryCodes: codes }));
-    }
-  }, [countrySelection]);
-
   const handleSelectAllCountries = useCallback(() => {
     const allSelected = countrySelection.type === 'all' || 
                        (countrySelection.type === 'specific' && countrySelection.countries.length === filteredCountries.length);
@@ -537,9 +543,9 @@ export default function NewDeliveryRule() {
     }
   }, [countrySelection, filteredCountries, countries]);
   
-  // Initialize selected countries from form data
+  // Initialize selected countries from form data only once on mount
   useEffect(() => {
-    if (formData.countryCodes) {
+    if (formData.countryCodes && countrySelection.countries.length === 0 && countrySelection.type === 'specific') {
       if (formData.countryCodes === 'ALL') {
         setCountrySelection({
           type: 'all',
@@ -554,7 +560,7 @@ export default function NewDeliveryRule() {
         });
       }
     }
-  }, [formData.countryCodes, countries]);
+  }, []);
   
   // Handle product search
   const searchProducts = useCallback((query) => {

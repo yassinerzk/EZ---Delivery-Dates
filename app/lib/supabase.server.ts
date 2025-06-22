@@ -141,15 +141,22 @@ export async function getDefaultDeliveryRule(shop: string) {
   }
 
   try {
+    // Get all default rules and order by updated_at DESC to get the latest one
     const { data, error } = await supabase
       .from('delivery_rules')
       .select('*')
       .eq('shop', shop)
       .eq('enabled', true)
       .eq('is_default', true)
-      .single();
+      .order('updated_at', { ascending: false })
+      .limit(1);
 
-    return { data, error };
+    if (error) {
+      return { data: null, error };
+    }
+
+    // Return the first (latest) default rule or null if none found
+    return { data: data && data.length > 0 ? data[0] : null, error: null };
   } catch (error) {
     console.error('Error fetching default delivery rule:', error);
     return { data: null, error };
@@ -207,6 +214,168 @@ export async function saveDeliveryRule(ruleData: {
   } catch (error) {
     console.error('Error saving delivery rule:', error);
     return { data: null, error };
+  }
+}
+
+/**
+ * Creates or updates a product metafield with the delivery rule ID
+ * @param {string} productId - Shopify product ID (e.g., "gid://shopify/Product/123456")
+ * @param {string} ruleId - Database rule ID
+ * @param {Object} admin - Shopify admin API instance
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function attachRuleMetafieldToProduct(productId: string, ruleId: string | number, admin: any) {
+  try {
+    // First, check if metafield definition exists, if not create it
+    const metafieldDefinitionQuery = `#graphql
+      query getMetafieldDefinitions($namespace: String!, $key: String!, $ownerType: MetafieldOwnerType!) {
+        metafieldDefinitions(first: 1, namespace: $namespace, key: $key, ownerType: $ownerType) {
+          edges {
+            node {
+              id
+              namespace
+              key
+            }
+          }
+        }
+      }`;
+
+    const definitionResponse = await admin.graphql(metafieldDefinitionQuery, {
+      variables: {
+        namespace: "delivery_rules",
+        key: "rule_id",
+        ownerType: "PRODUCT"
+      }
+    });
+
+    const definitionData = await definitionResponse.json();
+    const hasDefinition = definitionData.data.metafieldDefinitions.edges.length > 0;
+
+    // Create metafield definition if it doesn't exist
+    if (!hasDefinition) {
+      const createDefinitionMutation = `#graphql
+        mutation createMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+          metafieldDefinitionCreate(definition: $definition) {
+            createdDefinition {
+              id
+              namespace
+              key
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`;
+
+      await admin.graphql(createDefinitionMutation, {
+        variables: {
+          definition: {
+            namespace: "delivery_rules",
+            key: "rule_id",
+            name: "Delivery Rule ID",
+            description: "ID of the delivery rule associated with this product",
+            type: "single_line_text_field",
+            ownerType: "PRODUCT",
+            visibleToStorefrontApi: false
+          }
+        }
+      });
+    }
+
+    // Check if metafield already exists for this product
+    const checkMetafieldQuery = `#graphql
+      query getProductMetafield($id: ID!, $namespace: String!, $key: String!) {
+        product(id: $id) {
+          metafield(namespace: $namespace, key: $key) {
+            id
+            value
+          }
+        }
+      }`;
+
+    const checkResponse = await admin.graphql(checkMetafieldQuery, {
+      variables: {
+        id: productId,
+        namespace: "delivery_rules",
+        key: "rule_id"
+      }
+    });
+
+    const checkData = await checkResponse.json();
+    const existingMetafield = checkData.data.product?.metafield;
+
+    if (existingMetafield) {
+      // Update existing metafield
+      const updateMetafieldMutation = `#graphql
+        mutation updateMetafield($metafield: MetafieldInput!) {
+          metafieldUpdate(metafield: $metafield) {
+            metafield {
+              id
+              namespace
+              key
+              value
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`;
+
+      const updateResponse = await admin.graphql(updateMetafieldMutation, {
+        variables: {
+          metafield: {
+            id: existingMetafield.id,
+            value: ruleId.toString()
+          }
+        }
+      });
+
+      const updateData = await updateResponse.json();
+      if (updateData.data.metafieldUpdate.userErrors.length > 0) {
+        throw new Error(`Failed to update metafield: ${updateData.data.metafieldUpdate.userErrors[0].message}`);
+      }
+    } else {
+      // Create new metafield
+      const createMetafieldMutation = `#graphql
+        mutation createProductMetafield($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) {
+            metafields {
+              id
+              namespace
+              key
+              value
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`;
+
+      const createResponse = await admin.graphql(createMetafieldMutation, {
+        variables: {
+          metafields: [{
+            ownerId: productId,
+            namespace: "delivery_rules",
+            key: "rule_id",
+            value: ruleId.toString(),
+            type: "single_line_text_field"
+          }]
+        }
+      });
+
+      const createData = await createResponse.json();
+      if (createData.data.metafieldsSet.userErrors.length > 0) {
+        throw new Error(`Failed to create metafield: ${createData.data.metafieldsSet.userErrors[0].message}`);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error managing product metafield:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

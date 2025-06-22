@@ -389,9 +389,19 @@
         const isNumber = (value) => typeof value === 'number' && !isNaN(value);
 
 
-        // Validate API response structure
+        // Check if no rules were found and hide section
         console.log('🔍 EstimaTrack Extension: Validating response structure');
-        if (!data || !isNumber(data.minDays) || !isNumber(data.maxDays)) {
+        if (data && data.noRulesFound) {
+          console.log('🚫 EstimaTrack Extension: No delivery rules found, hiding section');
+          const deliveryEstimateSection = document.querySelector('.delivery-estimate-block');
+          if (deliveryEstimateSection) {
+            deliveryEstimateSection.style.display = 'none';
+          }
+          return;
+        }
+        
+        // Validate API response structure for normal responses
+        if (!data || (typeof data.minDays !== 'number' && typeof data.maxDays !== 'number')) {
           console.error('❌ EstimaTrack Extension: Invalid response structure:', {
             data: data,
             hasData: !!data,
@@ -439,8 +449,8 @@
           customMessage.style.display = 'none';
         }
         
-        // Calculate and display delivery date using estimatedMinDays and estimatedMaxDays
-        const avgDays = data.estimatedMinDays && data.estimatedMaxDays ? Math.ceil((data.estimatedMinDays + data.estimatedMaxDays) / 2) : (data.estimatedMinDays || data.estimatedMaxDays || 4);
+        // Calculate and display delivery date using minDays and maxDays
+        const avgDays = data.minDays && data.maxDays ? Math.ceil((data.minDays + data.maxDays) / 2) : (data.minDays || data.maxDays || 4);
         const deliveryDateResult = calculateDeliveryDate(`${avgDays} business days`);
         console.log('📅 EstimaTrack Extension: Calculated delivery date:', deliveryDateResult);
         if (deliveryDateResult && deliveryDate && deliveryDateText) {
