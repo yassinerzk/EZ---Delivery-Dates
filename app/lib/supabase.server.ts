@@ -1,4 +1,5 @@
 import { supabaseAdminTyped } from './supabase';
+import { Metafield } from '../utils/metafields.js';
 
 // Use the admin client for server-side operations
 const supabase = supabaseAdminTyped;
@@ -218,163 +219,165 @@ export async function saveDeliveryRule(ruleData: {
 }
 
 /**
- * Creates or updates a product metafield with the delivery rule ID
+ * Creates or updates a product metafield with the delivery rule data
  * @param {string} productId - Shopify product ID (e.g., "gid://shopify/Product/123456")
- * @param {string} ruleId - Database rule ID
+ * @param {string|number|object} ruleData - Rule data to store (can be ID, object, or JSON)
  * @param {Object} admin - Shopify admin API instance
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @param {string} namespace - Metafield namespace (default: "delivery_rules")
+ * @param {string} key - Metafield key (default: "rule_data")
+ * @returns {Promise<{success: boolean, metafield?: any, error?: string}>}
  */
-export async function attachRuleMetafieldToProduct(productId: string, ruleId: string | number, admin: any) {
+export async function attachRuleMetafieldToProduct(
+  productId: string, 
+  ruleData: string | number | object, 
+  admin: any,
+  namespace: string = "delivery_rules",
+  key: string = "rule_data"
+) {
   try {
-    // First, check if metafield definition exists, if not create it
-    const metafieldDefinitionQuery = `#graphql
-      query getMetafieldDefinitions($namespace: String!, $key: String!, $ownerType: MetafieldOwnerType!) {
-        metafieldDefinitions(first: 1, namespace: $namespace, key: $key, ownerType: $ownerType) {
-          edges {
-            node {
-              id
-              namespace
-              key
-            }
-          }
-        }
-      }`;
+    const metafieldClient = new Metafield(admin);
+    
+    // Check if metafield already exists
+    const existingMetafield = await metafieldClient.getProductMetafield(
+      productId, 
+      namespace, 
+      key
+    );
 
-    const definitionResponse = await admin.graphql(metafieldDefinitionQuery, {
-      variables: {
-        namespace: "delivery_rules",
-        key: "rule_id",
-        ownerType: "PRODUCT"
-      }
-    });
-
-    const definitionData = await definitionResponse.json();
-    const hasDefinition = definitionData.data.metafieldDefinitions.edges.length > 0;
-
-    // Create metafield definition if it doesn't exist
-    if (!hasDefinition) {
-      const createDefinitionMutation = `#graphql
-        mutation createMetafieldDefinition($definition: MetafieldDefinitionInput!) {
-          metafieldDefinitionCreate(definition: $definition) {
-            createdDefinition {
-              id
-              namespace
-              key
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }`;
-
-      await admin.graphql(createDefinitionMutation, {
-        variables: {
-          definition: {
-            namespace: "delivery_rules",
-            key: "rule_id",
-            name: "Delivery Rule ID",
-            description: "ID of the delivery rule associated with this product",
-            type: "single_line_text_field",
-            ownerType: "PRODUCT",
-            visibleToStorefrontApi: false
-          }
-        }
-      });
-    }
-
-    // Check if metafield already exists for this product
-    const checkMetafieldQuery = `#graphql
-      query getProductMetafield($id: ID!, $namespace: String!, $key: String!) {
-        product(id: $id) {
-          metafield(namespace: $namespace, key: $key) {
-            id
-            value
-          }
-        }
-      }`;
-
-    const checkResponse = await admin.graphql(checkMetafieldQuery, {
-      variables: {
-        id: productId,
-        namespace: "delivery_rules",
-        key: "rule_id"
-      }
-    });
-
-    const checkData = await checkResponse.json();
-    const existingMetafield = checkData.data.product?.metafield;
-
+    let result;
     if (existingMetafield) {
-      // Update existing metafield
-      const updateMetafieldMutation = `#graphql
-        mutation updateMetafield($metafield: MetafieldInput!) {
-          metafieldUpdate(metafield: $metafield) {
-            metafield {
-              id
-              namespace
-              key
-              value
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }`;
-
-      const updateResponse = await admin.graphql(updateMetafieldMutation, {
-        variables: {
-          metafield: {
-            id: existingMetafield.id,
-            value: ruleId.toString()
-          }
-        }
-      });
-
-      const updateData = await updateResponse.json();
-      if (updateData.data.metafieldUpdate.userErrors.length > 0) {
-        throw new Error(`Failed to update metafield: ${updateData.data.metafieldUpdate.userErrors[0].message}`);
-      }
+       // Update existing metafield
+       result = await metafieldClient.update({
+         id: existingMetafield.id,
+         namespace,
+         key,
+         value: ruleData,
+         ownerId: productId,
+         type: undefined // Let the method infer the type
+       });
     } else {
       // Create new metafield
-      const createMetafieldMutation = `#graphql
-        mutation createProductMetafield($metafields: [MetafieldsSetInput!]!) {
-          metafieldsSet(metafields: $metafields) {
-            metafields {
-              id
-              namespace
-              key
-              value
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }`;
-
-      const createResponse = await admin.graphql(createMetafieldMutation, {
-        variables: {
-          metafields: [{
-            ownerId: productId,
-            namespace: "delivery_rules",
-            key: "rule_id",
-            value: ruleId.toString(),
-            type: "single_line_text_field"
-          }]
-        }
+      result = await metafieldClient.create({
+        namespace,
+        key,
+        value: ruleData,
+        ownerId: productId,
+        type: undefined 
       });
+    }
 
-      const createData = await createResponse.json();
-      if (createData.data.metafieldsSet.userErrors.length > 0) {
-        throw new Error(`Failed to create metafield: ${createData.data.metafieldsSet.userErrors[0].message}`);
+    return { success: true, metafield: result };
+  } catch (error) {
+    console.error('Error managing product metafield:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * Retrieves delivery rule data from product metafield
+ * @param {string} productId - Shopify product ID
+ * @param {Object} admin - Shopify admin API instance
+ * @param {string} namespace - Metafield namespace (default: "delivery_rules")
+ * @param {string} key - Metafield key (default: "rule_data")
+ * @returns {Promise<{success: boolean, data?: any, error?: string}>}
+ */
+export async function getProductRuleMetafield(
+  productId: string,
+  admin: any,
+  namespace: string = "delivery_rules",
+  key: string = "rule_data"
+) {
+  try {
+    const metafieldClient = new Metafield(admin);
+    const metafield = await metafieldClient.getProductMetafield(productId, namespace, key);
+    
+    if (!metafield) {
+      return { success: true, data: null };
+    }
+
+    // Try to parse JSON if it's a JSON type
+    let parsedValue = metafield.value;
+    if (metafield.type === 'json') {
+      try {
+        parsedValue = JSON.parse(metafield.value);
+      } catch (e) {
+        console.warn('Failed to parse JSON metafield value:', e);
       }
     }
 
-    return { success: true };
+    return { 
+      success: true, 
+      data: {
+        ...metafield,
+        parsedValue
+      }
+    };
   } catch (error) {
-    console.error('Error managing product metafield:', error);
+    console.error('Error retrieving product metafield:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * Saves complete delivery rule data to product metafield in JSON format
+ * @param {string} productId - Shopify product ID
+ * @param {object} ruleData - Complete rule data object
+ * @param {Object} admin - Shopify admin API instance
+ * @returns {Promise<{success: boolean, metafield?: any, error?: string}>}
+ */
+export async function saveDeliveryRuleToProduct(productId: string, ruleData: object, admin: any) {
+  return attachRuleMetafieldToProduct(
+    productId,
+    ruleData,
+    admin,
+    "delivery_rules",
+    "complete_rule"
+  );
+}
+
+/**
+ * Updates delivery rule data in database and syncs to product metafield
+ * @param {string} ruleId - Database rule ID
+ * @param {object} updateData - Data to update
+ * @param {string} productId - Shopify product ID (optional)
+ * @param {Object} admin - Shopify admin API instance (optional)
+ * @returns {Promise<{success: boolean, rule?: any, metafield?: any, error?: string}>}
+ */
+export async function updateDeliveryRuleAndSync(
+  ruleId: string,
+  updateData: object,
+  productId?: string,
+  admin?: any
+) {
+  try {
+    // Update in database
+    const { data: updatedRule, error: dbError } = await supabase
+      .from('delivery_rules')
+      .update(updateData)
+      .eq('id', ruleId)
+      .select()
+      .single();
+
+    if (dbError) {
+      throw new Error(`Database update failed: ${dbError.message}`);
+    }
+
+    // Sync to metafield if product ID and admin are provided
+    let metafieldResult = null;
+    if (productId && admin) {
+      metafieldResult = await saveDeliveryRuleToProduct(productId, updatedRule, admin);
+      if (!metafieldResult.success) {
+        console.warn('Failed to sync to metafield:', metafieldResult.error);
+      }
+    }
+
+    return {
+      success: true,
+      rule: updatedRule,
+      metafield: metafieldResult?.metafield
+    };
+  } catch (error) {
+    console.error('Error updating delivery rule and syncing:', error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
